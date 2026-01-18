@@ -975,6 +975,16 @@ def debug_status():
         cur.execute("SELECT id, nome, url FROM playlists")
         cols = [dict(row) for row in cur.fetchall()]
         
+        # Count tables
+        cur.execute("SELECT COUNT(*) as count FROM playlist")
+        total_songs = cur.fetchone()['count']
+        
+        cur.execute("SELECT COUNT(*) as count FROM playlist WHERE status = 'Em Execução'")
+        executing_songs = cur.fetchone()['count']
+        
+        cur.execute("SELECT COUNT(*) as count FROM musicas_controle")
+        tracked_songs = cur.fetchone()['count']
+        
         cur.close()
         conn.close()
         
@@ -984,6 +994,11 @@ def debug_status():
             "queue_pending_top_5": queue,
             "playlists_collections_count": len(cols),
             "playlists_collections": cols,
+            "total_songs_in_playlist_table": total_songs,
+            "executing_songs": executing_songs,
+            "tracked_songs_count": tracked_songs,
+            "current_link_data": current_link_data,  # Expõe a variável global
+            "config": config,
             "server_time": datetime.datetime.now().isoformat(),
             "cwd": os.getcwd(),
             "playlists_txt_exists": os.path.exists('playlists.txt'),
