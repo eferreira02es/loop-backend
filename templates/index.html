@@ -541,10 +541,17 @@
 
             function loadPlaylists() {
                 fetch('/api/playlists')
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error("Erro na API: " + res.status);
+                        return res.json();
+                    })
                     .then(data => {
                         const tbody = document.querySelector('#playlists-table tbody');
                         tbody.innerHTML = '';
+                        if (!data || data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="3">Nenhuma playlist encontrada.</td></tr>';
+                            return;
+                        }
                         data.forEach(pl => {
                             const row = `<tr>
                         <td>${pl.nome || 'Playlist'}</td>
@@ -553,6 +560,10 @@
                     </tr>`;
                             tbody.insertAdjacentHTML('beforeend', row);
                         });
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Erro ao carregar playlists: " + err.message);
                     });
             }
 
@@ -565,25 +576,36 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url })
                 })
-                    .then(() => {
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) throw new Error(data.error);
                         document.getElementById('playlist-url').value = '';
                         loadPlaylists();
-                    });
+                    })
+                    .catch(err => alert("Erro ao adicionar: " + err.message));
             }
 
             function removerPlaylist(id) {
                 if (confirm('Remover playlist?')) {
                     fetch(`/api/playlists/${id}`, { method: 'DELETE' })
-                        .then(() => loadPlaylists());
+                        .then(() => loadPlaylists())
+                        .catch(err => alert("Erro ao remover: " + err.message));
                 }
             }
 
             function loadStats() {
                 fetch('/get_stats')
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error("Erro na API Stats: " + res.status);
+                        return res.json();
+                    })
                     .then(data => {
                         const tbody = document.querySelector('#stats-table tbody');
                         tbody.innerHTML = '';
+                        if (!data || data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5">Sem dados de estatísticas.</td></tr>';
+                            return;
+                        }
                         data.forEach(stat => {
                             let color = '#fff';
                             if (stat.status_meta.includes('Atingida')) color = '#1DB954';
@@ -597,6 +619,10 @@
                     </tr>`;
                             tbody.insertAdjacentHTML('beforeend', row);
                         });
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Erro ao carregar metas: " + err.message);
                     });
             }
 
