@@ -2,7 +2,7 @@ import os
 import math
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_cors import CORS
 import threading
@@ -486,17 +486,31 @@ def motor_automacao():
                 time.sleep(30)
                 continue
                 
-            # 2. PROCESSO DE RESET DIÁRIO (21h)
-            agora = datetime.utcnow() - timedelta(hours=3) # Horário de Brasília
-            hoje_str = agora.strftime('%Y-%m-%d')
+                # 2. PROCESSO DE RESET DIÁRIO (21h)
+                try:
+                    agora = datetime.utcnow() - timedelta(hours=3) # Horário de Brasília
+                    hoje_str = agora.strftime('%Y-%m-%d')
+                    
+                    # Verifica se já resetou hoje
+                    last_reset = config.get('last_reset_date', '')
+                    
+                    # Reseta se for >= 21h e ainda não tiver resetado hoje
+                    if agora.hour >= 21 and last_reset != hoje_str and config.get('reset_automatico', 1) == 1:
+                        executar_reset_diario()
+                        carregar_config() # Recarrega config
+                except Exception as e:
+                    print(f"Erro no reset diário: {e}")
+
+            # 3. PROCESSAMENTO DA FILA
+            playlist = carregar_playlist()
             
-            # Verifica se já resetou hoje
-            last_reset = config.get('last_reset_date', '')
+            # ... resto do código ...
             
-            # Reseta se for >= 21h e ainda não tiver resetado hoje
-            if agora.hour >= 21 and last_reset != hoje_str and config.get('reset_automatico', 1) == 1:
-                executar_reset_diario()
-                carregar_config() # Recarrega config para atualizar last_reset_date
+        except Exception as e:
+            import traceback
+            print(f"ERRO NO MOTOR: {e}")
+            traceback.print_exc()
+            time.sleep(15)
                 
             # 3. PROCESSAMENTO DA FILA
             playlist = carregar_playlist()
@@ -647,7 +661,12 @@ def api_devices_count():
 
 @app.route('/api/playlists', methods=['GET'])
 def api_get_playlists():
-    return jsonify(get_playlists_db())
+    playlists = get_playlists_db()
+    # Converte datetime para string
+    for pl in playlists:
+        if 'data_adicao' in pl and pl['data_adicao']:
+            pl['data_adicao'] = pl['data_adicao'].isoformat()
+    return jsonify(playlists)
 
 @app.route('/api/playlists', methods=['POST'])
 def api_add_playlist():
