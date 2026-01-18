@@ -664,6 +664,31 @@ def api_remove_playlist(id):
     remover_playlist_db(id)
     return jsonify({"status": "ok"})
 
+# --- SISTEMA DE JOBS EM BACKGROUND ---
+jobs = {}
+
+def processar_validacao_background(job_id, link, plays_diarios, meta_mensal):
+    """Executa a validação em thread separada"""
+    try:
+        jobs[job_id] = {"status": "processing", "message": "Validando músicas nas playlists..."}
+        
+        # Simula um pequeno delay para garantir que o status seja lido
+        time.sleep(1)
+        
+        resultado = validar_musica_playlists(link, plays_diarios, meta_mensal)
+        
+        if "error" in resultado:
+            jobs[job_id] = {"status": "error", "message": resultado["error"]}
+        else:
+            salvar_validacao(resultado)
+            jobs[job_id] = {
+                "status": "completed", 
+                "message": f"Sucesso! Encontrada em {len(resultado['playlists_encontradas'])} playlists.",
+                "resultado": resultado
+            }
+    except Exception as e:
+        jobs[job_id] = {"status": "error", "message": f"Erro interno: {str(e)}"}
+
 @app.route('/api/add_music_smart', methods=['POST'])
 def api_add_music_smart():
     data = request.json
@@ -674,13 +699,23 @@ def api_add_music_smart():
     if not link:
         return jsonify({"error": "Link obrigatório"}), 400
         
-    resultado = validar_musica_playlists(link, plays_diarios, meta_mensal)
+    # Cria um ID para o job
+    job_id = str(int(time.time() * 1000))
+    jobs[job_id] = {"status": "queued", "message": "Iniciando validação..."}
     
-    if "error" in resultado:
-        return jsonify(resultado), 400
-        
-    salvar_validacao(resultado)
-    return jsonify({"status": "ok", "resultado": resultado})
+    # Inicia thread
+    thread = threading.Thread(target=processar_validacao_background, args=(job_id, link, plays_diarios, meta_mensal))
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"status": "ok", "job_id": job_id})
+
+@app.route('/api/job_status/<job_id>')
+def api_job_status(job_id):
+    job = jobs.get(job_id)
+    if not job:
+        return jsonify({"status": "error", "message": "Job não encontrado"}), 404
+    return jsonify(job)
 
 @app.route('/get_stats')
 def get_stats():

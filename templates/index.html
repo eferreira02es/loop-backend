@@ -422,7 +422,7 @@
         <div id="loading" class="modal">
             <div class="modal-content">
                 <h3 style="color: #1DB954; margin-bottom: 15px;">Processando...</h3>
-                <p>Validando música nas playlists...</p>
+                <p id="loading-text">Validando música nas playlists...</p>
             </div>
         </div>
 
@@ -475,7 +475,9 @@
             if (!link) return alert("Link obrigatório");
 
             document.getElementById('loading').style.display = 'flex';
+            document.getElementById('loading-text').textContent = 'Iniciando validação (Isso pode demorar uns min)...';
 
+            // 1. Inicia o Job
             fetch('/api/add_music_smart', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -483,19 +485,44 @@
             })
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('loading').style.display = 'none';
-                    if (data.error) {
-                        alert('Erro: ' + data.error);
-                    } else {
-                        alert(`Sucesso! Encontrada em ${data.resultado.playlists_encontradas.length} playlists.`);
-                        document.getElementById('smart-link').value = '';
-                        updateData();
-                    }
+                    if (data.error) throw new Error(data.error);
+
+                    // 2. Faz Polling do Status
+                    pollJobStatus(data.job_id);
                 })
                 .catch(err => {
                     document.getElementById('loading').style.display = 'none';
-                    alert('Erro ao processar: ' + err);
+                    alert('Erro ao iniciar: ' + err.message);
                 });
+        }
+
+        function pollJobStatus(jobId) {
+            const interval = setInterval(() => {
+                fetch(`/api/job_status/${jobId}`)
+                    .then(res => res.json())
+                    .then(job => {
+                        const loadingText = document.getElementById('loading-text');
+
+                        if (job.status === 'processing') {
+                            loadingText.textContent = job.message;
+                        } else if (job.status === 'completed') {
+                            clearInterval(interval);
+                            document.getElementById('loading').style.display = 'none';
+                            alert(job.message);
+                            document.getElementById('smart-link').value = '';
+                            updateData();
+                        } else if (job.status === 'error') {
+                            clearInterval(interval);
+                            document.getElementById('loading').style.display = 'none';
+                            alert('Erro: ' + job.message);
+                        }
+                    })
+                    .catch(err => {
+                        clearInterval(interval);
+                        document.getElementById('loading').style.display = 'none';
+                        alert('Erro de conexão: ' + err);
+                    });
+            }, 2000); // Poll a cada 2 segundos
         }
 
         function loadPlaylists() {
