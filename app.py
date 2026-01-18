@@ -3,6 +3,7 @@ import math
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import datetime # Importando modulo inteiro para evitar conflitos
+import decimal
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_cors import CORS
 import threading
@@ -616,7 +617,7 @@ def api_current_link():
             if m['status'] == 'Em Execução':
                 return jsonify({
                     "link": m['link_musica'],
-                    "duracao_min": m['duracao_min'],
+                    "duracao_min": float(m['duracao_min']),
                     "nome": m['nome_musica'],
                     "timestamp": int(m['plays_atuais'])  # Usa plays_atuais como "versão" para detectar mudanças
                 })
@@ -649,14 +650,22 @@ def api_devices_count():
     count = contar_dispositivos_ativos()
     return jsonify({"count": count})
 
+def serialize_data(data):
+    """Converte objetos não serializáveis (datetime, Decimal) para string/float"""
+    if isinstance(data, list):
+        return [serialize_data(item) for item in data]
+    elif isinstance(data, dict):
+        return {key: serialize_data(value) for key, value in data.items()}
+    elif isinstance(data, (datetime.datetime, datetime.date)):
+        return data.isoformat()
+    elif isinstance(data, decimal.Decimal):
+        return float(data)
+    return data
+
 @app.route('/api/playlists', methods=['GET'])
 def api_get_playlists():
     playlists = get_playlists_db()
-    # Converte datetime para string
-    for pl in playlists:
-        if 'data_adicao' in pl and pl['data_adicao']:
-            pl['data_adicao'] = pl['data_adicao'].isoformat()
-    return jsonify(playlists)
+    return jsonify(serialize_data(playlists))
 
 @app.route('/api/playlists', methods=['POST'])
 def api_add_playlist():
@@ -776,7 +785,7 @@ def get_stats():
     
     cur.close()
     conn.close()
-    return jsonify(stats)
+    return jsonify(serialize_data(stats))
 
 @app.route('/api/config', methods=['POST'])
 def api_update_config():
