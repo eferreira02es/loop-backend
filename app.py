@@ -505,17 +505,6 @@ def motor_automacao():
             # 3. PROCESSAMENTO DA FILA
             playlist = carregar_playlist()
             
-            # ... resto do código ...
-            
-        except Exception as e:
-            import traceback
-            print(f"ERRO NO MOTOR: {e}")
-            traceback.print_exc()
-            time.sleep(15)
-                
-            # 3. PROCESSAMENTO DA FILA
-            playlist = carregar_playlist()
-            
             # Encontra a primeira música pendente ou em execução
             musica_atual = None
             for m in playlist:
