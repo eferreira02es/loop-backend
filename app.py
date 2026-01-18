@@ -178,6 +178,7 @@ def contar_dispositivos_ativos():
     conn.close()
     return result['count'] if result else 0
 
+
 # --- MOTOR DE AUTOMAÇÃO ---
 def motor_automacao():
     """Loop principal que processa a playlist"""
@@ -407,15 +408,20 @@ def move_to_top(id):
     return redirect(url_for('index'))
 
 # --- INICIALIZAÇÃO ---
-if __name__ == '__main__':
-    # Inicializa o banco de dados
+# Inicializa o banco de dados quando o módulo é carregado (funciona com Gunicorn)
+print("🚀 Inicializando aplicação...")
+try:
     init_db()
     carregar_config()
-    
-    # Inicia o motor de automação em uma thread separada
-    motor_thread = threading.Thread(target=motor_automacao, daemon=True)
-    motor_thread.start()
-    
-    # Inicia o servidor Flask
+    print("✅ Banco de dados pronto!")
+except Exception as e:
+    print(f"⚠️ Erro ao inicializar banco: {e}")
+
+# Inicia o motor de automação em uma thread separada
+motor_thread = threading.Thread(target=motor_automacao, daemon=True)
+motor_thread.start()
+
+if __name__ == '__main__':
+    # Inicia o servidor Flask (apenas para execução local)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
