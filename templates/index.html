@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LooP - Gerenciador de Playlist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #1DB954, #1ed760);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat-card h3 {
+            color: #1DB954;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .card h2 {
+            color: #1DB954;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+        
+        input, select {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        input:focus, select:focus {
+            outline: 2px solid #1DB954;
+        }
+        
+        input::placeholder {
+            color: #666;
+        }
+        
+        button, .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #1DB954, #1ed760);
+            color: #000;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(29, 185, 84, 0.4);
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: #fff;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        th {
+            color: #1DB954;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+        
+        tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-pendente {
+            background: #f39c12;
+            color: #000;
+        }
+        
+        .status-execucao {
+            background: #1DB954;
+            color: #000;
+        }
+        
+        .status-concluido {
+            background: #3498db;
+            color: #fff;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1DB954, #1ed760);
+            transition: width 0.3s ease;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .actions a {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+        
+        .online-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            background: #1DB954;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .config-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .config-row input {
+            width: 100px;
+        }
+        
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            table {
+                font-size: 0.85rem;
+            }
+            
+            th, td {
+                padding: 10px;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 LooP</h1>
+            <p>Gerenciador de Playlist Spotify</p>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3 class="online-indicator">
+                    <span class="online-dot"></span>
+                    <span id="devices-count">{{ devices_online }}</span>
+                </h3>
+                <p>Dispositivos Online</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ config.quantidade_aparelhos }}</h3>
+                <p>Aparelhos Configurados</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="tempo-restante">--:--:--</h3>
+                <p>Tempo Restante</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="tempo-planejado">--:--:--</h3>
+                <p>Tempo Planejado</p>
+            </div>
+        </div>
+        
+        <!-- Configurações -->
+        <div class="card">
+            <h2>⚙️ Configurações</h2>
+            <form action="/update_config" method="POST" class="config-row">
+                <div class="form-group">
+                    <label>Quantidade de Aparelhos</label>
+                    <input type="number" name="quantidade_aparelhos" value="{{ config.quantidade_aparelhos }}" min="1" max="500">
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a href="/reset_all_plays" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja resetar todos os plays?')">Resetar Plays</a>
+            </form>
+        </div>
+        
+        <!-- Adicionar Música -->
+        <div class="card">
+            <h2>➕ Adicionar Música</h2>
+            <form action="/add" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome da Música</label>
+                        <input type="text" name="nome_musica" placeholder="Ex: Minha Música" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Link do Spotify</label>
+                        <input type="url" name="link_musica" placeholder="https://open.spotify.com/track/..." required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Plays Desejados</label>
+                        <input type="number" name="plays_desejados" placeholder="1000" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Duração (minutos)</label>
+                        <input type="number" name="duracao_min" placeholder="3.5" step="0.1" min="0.5" required>
+                    </div>
+                    <div class="form-group" style="justify-content: flex-end;">
+                        <button type="submit" class="btn btn-primary">Adicionar à Fila</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Playlist -->
+        <div class="card">
+            <h2>📋 Playlist</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Música</th>
+                        <th>Progresso</th>
+                        <th>Duração</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="playlist-body">
+                    <!-- Carregado via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        
+        function getStatusClass(status) {
+            switch(status) {
+                case 'Pendente': return 'status-pendente';
+                case 'Em Execução': return 'status-execucao';
+                case 'Concluído': return 'status-concluido';
+                default: return '';
+            }
+        }
+        
+        function updateData() {
+            fetch('/get_data')
+                .then(response => response.json())
+                .then(data => {
+                    // Atualizar tempos
+                    document.getElementById('tempo-restante').textContent = formatTime(data.tempo_restante_seg);
+                    document.getElementById('tempo-planejado').textContent = formatTime(data.tempo_planejado_seg);
+                    document.getElementById('devices-count').textContent = data.devices_online || 0;
+                    
+                    // Atualizar playlist
+                    const tbody = document.getElementById('playlist-body');
+                    tbody.innerHTML = '';
+                    
+                    data.playlist.forEach((item, index) => {
+                        const progress = item.plays_desejados > 0 
+                            ? Math.min(100, (item.plays_atuais / item.plays_desejados) * 100)
+                            : 0;
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                <strong>${item.nome_musica}</strong>
+                                <br><small style="color: #666;">${item.link_musica.substring(0, 50)}...</small>
+                            </td>
+                            <td>
+                                <div>${item.plays_atuais} / ${item.plays_desejados}</div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${progress}%"></div>
+                                </div>
+                            </td>
+                            <td>${item.duracao_min} min</td>
+                            <td><span class="status ${getStatusClass(item.status)}">${item.status}</span></td>
+                            <td class="actions">
+                                <a href="/move_to_top/${item.id}" class="btn btn-secondary">⬆️ Topo</a>
+                                <a href="/delete/${item.id}" class="btn btn-danger" onclick="return confirm('Deletar esta música?')">🗑️</a>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Erro ao atualizar dados:', error));
+        }
+        
+        // Atualizar dados a cada 5 segundos
+        updateData();
+        setInterval(updateData, 5000);
+    </script>
+</body>
+</html>
