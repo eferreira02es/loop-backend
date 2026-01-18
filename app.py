@@ -45,6 +45,8 @@ current_link_data = {
 }
 
 # Configurações globais
+DEVICE_TIMEOUT_SECONDS = 300 # 5 minutos
+
 config = {
     "quantidade_aparelhos": 200,
     "reset_automatico": 1
