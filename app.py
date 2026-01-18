@@ -225,12 +225,18 @@ def motor_automacao():
                         "timestamp": int(time.time())
                     }
                     
-                    print(f"[{time.strftime('%H:%M:%S')}] Enviando '{musica_atual['nome_musica']}' | "
-                          f"Progresso: {musica_atual['plays_atuais'] + config['quantidade_aparelhos']}/{musica_atual['plays_desejados']}")
+                    # Usa dispositivos online em vez de aparelhos configurados
+                    dispositivos_online = contar_dispositivos_ativos()
+                    if dispositivos_online == 0:
+                        dispositivos_online = 1  # Mínimo 1 para evitar divisão por zero
                     
-                    # Calcula plays a somar
+                    print(f"[{time.strftime('%H:%M:%S')}] Enviando '{musica_atual['nome_musica']}' | "
+                          f"Dispositivos online: {dispositivos_online} | "
+                          f"Progresso: {musica_atual['plays_atuais'] + dispositivos_online}/{musica_atual['plays_desejados']}")
+                    
+                    # Calcula plays a somar baseado em dispositivos online
                     plays_a_somar = min(
-                        config['quantidade_aparelhos'],
+                        dispositivos_online,
                         musica_atual['plays_desejados'] - musica_atual['plays_atuais']
                     )
                     
@@ -294,44 +300,48 @@ def api_devices_count():
     return jsonify({"count": count})
 
 # --- ROTAS DA INTERFACE WEB ---
-def calcular_tempo_restante_fila(playlist):
-    """Calcula tempo restante para completar a playlist"""
+def calcular_tempo_restante_fila(playlist, dispositivos_online):
+    """Calcula tempo restante para completar a playlist baseado em dispositivos online"""
     tempo_total_seg = 0
     
-    if config.get('quantidade_aparelhos', 0) > 0:
-        for row in playlist:
-            if row['status'] != 'Concluído':
-                plays_restantes = row['plays_desejados'] - row['plays_atuais']
-                
-                if plays_restantes > 0:
-                    ciclos_necessarios = math.ceil(plays_restantes / config['quantidade_aparelhos'])
-                    intervalo_ciclo = (row['duracao_min'] * 60) + 10
-                    tempo_total_seg += ciclos_necessarios * intervalo_ciclo
+    # Usa dispositivos online, mínimo 1 para evitar divisão por zero
+    qtd_dispositivos = max(dispositivos_online, 1)
+    
+    for row in playlist:
+        if row['status'] != 'Concluído':
+            plays_restantes = row['plays_desejados'] - row['plays_atuais']
+            
+            if plays_restantes > 0:
+                ciclos_necessarios = math.ceil(plays_restantes / qtd_dispositivos)
+                intervalo_ciclo = (row['duracao_min'] * 60) + 10
+                tempo_total_seg += ciclos_necessarios * intervalo_ciclo
     
     return tempo_total_seg
 
-def calcular_tempo_planejado_fila(playlist):
-    """Calcula tempo total planejado desde o início"""
+def calcular_tempo_planejado_fila(playlist, dispositivos_online):
+    """Calcula tempo total planejado desde o início baseado em dispositivos online"""
     tempo_total_seg = 0
     
-    if config.get('quantidade_aparelhos', 0) > 0:
-        for row in playlist:
-            if row['status'] != 'Concluído':
-                plays_totais = row['plays_desejados']
-                
-                if plays_totais > 0:
-                    ciclos_necessarios = math.ceil(plays_totais / config['quantidade_aparelhos'])
-                    intervalo_ciclo = (row['duracao_min'] * 60) + 10
-                    tempo_total_seg += ciclos_necessarios * intervalo_ciclo
+    # Usa dispositivos online, mínimo 1 para evitar divisão por zero
+    qtd_dispositivos = max(dispositivos_online, 1)
+    
+    for row in playlist:
+        if row['status'] != 'Concluído':
+            plays_totais = row['plays_desejados']
+            
+            if plays_totais > 0:
+                ciclos_necessarios = math.ceil(plays_totais / qtd_dispositivos)
+                intervalo_ciclo = (row['duracao_min'] * 60) + 10
+                tempo_total_seg += ciclos_necessarios * intervalo_ciclo
     
     return tempo_total_seg
 
 @app.route('/')
 def index():
     playlist = carregar_playlist()
-    tempo_restante_seg = calcular_tempo_restante_fila(playlist)
-    tempo_planejado_seg = calcular_tempo_planejado_fila(playlist)
     devices_online = contar_dispositivos_ativos()
+    tempo_restante_seg = calcular_tempo_restante_fila(playlist, devices_online)
+    tempo_planejado_seg = calcular_tempo_planejado_fila(playlist, devices_online)
     
     return render_template('index.html', 
                          config=config, 
@@ -342,9 +352,9 @@ def index():
 @app.route('/get_data')
 def get_data():
     playlist = carregar_playlist()
-    tempo_restante_seg = calcular_tempo_restante_fila(playlist)
-    tempo_planejado_seg = calcular_tempo_planejado_fila(playlist)
     devices_online = contar_dispositivos_ativos()
+    tempo_restante_seg = calcular_tempo_restante_fila(playlist, devices_online)
+    tempo_planejado_seg = calcular_tempo_planejado_fila(playlist, devices_online)
     
     return jsonify({
         'playlist': playlist, 
