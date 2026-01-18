@@ -38,10 +38,12 @@
             font-size: 2.5rem;
             background: linear-gradient(90deg, #1DB954, #1ed760);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 10px;
         }
 
+        /* Stats Cards */
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -66,6 +68,40 @@
         .stat-card p {
             color: #aaa;
             font-size: 0.9rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            flex: 1;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #1DB954;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .card {
@@ -109,18 +145,13 @@
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
             font-size: 1rem;
+            width: 100%;
         }
 
-        input:focus,
-        select:focus {
+        input:focus {
             outline: 2px solid #1DB954;
         }
 
-        input::placeholder {
-            color: #666;
-        }
-
-        button,
         .btn {
             padding: 12px 25px;
             border: none;
@@ -128,7 +159,7 @@
             cursor: pointer;
             font-size: 1rem;
             font-weight: bold;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             text-decoration: none;
             display: inline-block;
             text-align: center;
@@ -139,27 +170,14 @@
             color: #000;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(29, 185, 84, 0.4);
-        }
-
         .btn-danger {
             background: #e74c3c;
             color: #fff;
         }
 
-        .btn-danger:hover {
-            background: #c0392b;
-        }
-
         .btn-secondary {
             background: rgba(255, 255, 255, 0.2);
             color: #fff;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
         }
 
         table {
@@ -177,14 +195,8 @@
 
         th {
             color: #1DB954;
-            font-weight: 600;
             text-transform: uppercase;
             font-size: 0.8rem;
-            letter-spacing: 1px;
-        }
-
-        tr:hover {
-            background: rgba(255, 255, 255, 0.05);
         }
 
         .status {
@@ -219,24 +231,8 @@
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #1DB954, #1ed760);
+            background: #1DB954;
             transition: width 0.3s ease;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .actions a {
-            padding: 6px 12px;
-            font-size: 0.8rem;
-        }
-
-        .online-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .online-dot {
@@ -244,6 +240,8 @@
             height: 10px;
             background: #1DB954;
             border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
             animation: pulse 2s infinite;
         }
 
@@ -259,33 +257,27 @@
             }
         }
 
-        .config-row {
-            display: flex;
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
             align-items: center;
-            gap: 15px;
         }
 
-        .config-row input {
-            width: 100px;
-        }
-
-        @media (max-width: 768px) {
-            .stats {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            table {
-                font-size: 0.85rem;
-            }
-
-            th,
-            td {
-                padding: 10px;
-            }
-
-            .actions {
-                flex-direction: column;
-            }
+        .modal-content {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
         }
     </style>
 </head>
@@ -294,20 +286,17 @@
     <div class="container">
         <header>
             <h1>🎵 LooP</h1>
-            <p>Gerenciador de Playlist Spotify</p>
+            <p>Gerenciador Inteligente de Playlist</p>
         </header>
 
         <div class="stats">
             <div class="stat-card">
-                <h3 class="online-indicator">
-                    <span class="online-dot"></span>
-                    <span id="devices-count">{{ devices_online }}</span>
-                </h3>
+                <h3><span class="online-dot"></span><span id="devices-count">0</span></h3>
                 <p>Dispositivos Online</p>
             </div>
             <div class="stat-card">
                 <h3 id="tempo-restante">--:--:--</h3>
-                <p>Tempo Restante</p>
+                <p>Tempo Restante (Hoje)</p>
             </div>
             <div class="stat-card">
                 <h3 id="tempo-planejado">--:--:--</h3>
@@ -315,66 +304,146 @@
             </div>
         </div>
 
-        <!-- Ações Rápidas -->
-        <div class="card">
-            <h2>⚙️ Ações</h2>
-            <div class="config-row">
-                <a href="/reset_all_plays" class="btn btn-danger"
-                    onclick="return confirm('Tem certeza que deseja resetar todos os plays?')">Resetar Plays</a>
+        <!-- Tabs Navigation -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('adicionar')">➕ Adicionar Música</button>
+            <button class="tab-btn" onclick="openTab('playlists')">📋 Gerenciar Playlists</button>
+            <button class="tab-btn" onclick="openTab('controle')">📊 Controle & Metas</button>
+        </div>
+
+        <!-- Tab: Adicionar Música (Smart) -->
+        <div id="adicionar" class="tab-content active">
+            <div class="card">
+                <h2>Adicionar Música (Validação Automática)</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Link do Spotify</label>
+                        <input type="url" id="smart-link" placeholder="https://open.spotify.com/track/..." required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Plays Diários Desejados</label>
+                        <input type="number" id="smart-plays" value="100" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Meta Mensal</label>
+                        <input type="number" id="smart-meta" value="3000" min="1">
+                    </div>
+                </div>
+                <button onclick="adicionarMusicaSmart()" class="btn btn-primary" style="width: 100%">Validar e
+                    Adicionar</button>
+            </div>
+
+            <div class="card">
+                <h2>Fila de Execução (Hoje)</h2>
+                <div class="actions" style="margin-bottom: 15px;">
+                    <a href="/reset_all_plays" class="btn btn-danger" onclick="return confirm('Resetar fila?')">Resetar
+                        Fila</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Música</th>
+                            <th>Progresso</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playlist-body">
+                        <!-- JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Adicionar Música -->
-        <div class="card">
-            <h2>➕ Adicionar Música</h2>
-            <form action="/add" method="POST">
+        <!-- Tab: Gerenciar Playlists -->
+        <div id="playlists" class="tab-content">
+            <div class="card">
+                <h2>Adicionar Nova Playlist</h2>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Nome da Música</label>
-                        <input type="text" name="nome_musica" placeholder="Ex: Minha Música" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Link do Spotify</label>
-                        <input type="url" name="link_musica" placeholder="https://open.spotify.com/track/..." required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Plays Desejados</label>
-                        <input type="number" name="plays_desejados" placeholder="1000" min="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Duração (minutos)</label>
-                        <input type="number" name="duracao_min" placeholder="3.5" step="0.1" min="0.5" required>
+                        <label>Link da Playlist</label>
+                        <input type="url" id="playlist-url" placeholder="https://open.spotify.com/playlist/...">
                     </div>
                     <div class="form-group" style="justify-content: flex-end;">
-                        <button type="submit" class="btn btn-primary">Adicionar à Fila</button>
+                        <button onclick="adicionarPlaylist()" class="btn btn-primary">Adicionar</button>
                     </div>
                 </div>
-            </form>
+            </div>
+
+            <div class="card">
+                <h2>Playlists Cadastradas</h2>
+                <table id="playlists-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Link</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JS -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Playlist -->
-        <div class="card">
-            <h2>📋 Playlist</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Música</th>
-                        <th>Progresso</th>
-                        <th>Duração</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="playlist-body">
-                    <!-- Carregado via JavaScript -->
-                </tbody>
-            </table>
+        <!-- Tab: Controle & Config -->
+        <div id="controle" class="tab-content">
+            <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Configurações</h2>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="reset-auto-toggle">Reset Automático (21h)</label>
+                    <input type="checkbox" id="reset-auto-toggle" onchange="toggleResetAuto(this)" style="width: auto;">
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Painel de Controle Mensal</h2>
+                <table id="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Música</th>
+                            <th>Plays Hoje</th>
+                            <th>Plays Mês</th>
+                            <th>Meta Mensal</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JS -->
+                    </tbody>
+                </table>
+            </div>
         </div>
+
+        <!-- Modal Loading -->
+        <div id="loading" class="modal">
+            <div class="modal-content">
+                <h3 style="color: #1DB954; margin-bottom: 15px;">Processando...</h3>
+                <p>Validando música nas playlists...</p>
+            </div>
+        </div>
+
     </div>
 
     <script>
+        // Tabs Logic
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'playlists') loadPlaylists();
+            if (tabName === 'controle') {
+                loadStats();
+                loadConfig();
+            }
+        }
+
         function formatTime(seconds) {
             const h = Math.floor(seconds / 3600);
             const m = Math.floor((seconds % 3600) / 60);
@@ -382,59 +451,164 @@
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
 
-        function getStatusClass(status) {
-            switch (status) {
-                case 'Pendente': return 'status-pendente';
-                case 'Em Execução': return 'status-execucao';
-                case 'Concluído': return 'status-concluido';
-                default: return '';
+        // --- API CALLS ---
+
+        function loadConfig() {
+            // A leitura da config é feita via /get_data no loop principal
+            // Mas podemos forçar atualização se necessário
+        }
+
+        function toggleResetAuto(checkbox) {
+            const valor = checkbox.checked ? 1 : 0;
+            fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chave: 'reset_automatico', valor })
+            });
+        }
+
+        function adicionarMusicaSmart() {
+            const link = document.getElementById('smart-link').value;
+            const plays = document.getElementById('smart-plays').value;
+            const meta = document.getElementById('smart-meta').value;
+
+            if (!link) return alert("Link obrigatório");
+
+            document.getElementById('loading').style.display = 'flex';
+
+            fetch('/api/add_music_smart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ link, plays_diarios: plays, meta_mensal: meta })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    if (data.error) {
+                        alert('Erro: ' + data.error);
+                    } else {
+                        alert(`Sucesso! Encontrada em ${data.resultado.playlists_encontradas.length} playlists.`);
+                        document.getElementById('smart-link').value = '';
+                        updateData();
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('loading').style.display = 'none';
+                    alert('Erro ao processar: ' + err);
+                });
+        }
+
+        function loadPlaylists() {
+            fetch('/api/playlists')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector('#playlists-table tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(pl => {
+                        const row = `<tr>
+                        <td>${pl.nome || 'Playlist'}</td>
+                        <td><a href="${pl.url}" target="_blank" style="color: #1DB954">Abrir Spotify</a></td>
+                        <td><button onclick="removerPlaylist(${pl.id})" class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem">X</button></td>
+                    </tr>`;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+                });
+        }
+
+        function adicionarPlaylist() {
+            const url = document.getElementById('playlist-url').value;
+            if (!url) return;
+
+            fetch('/api/playlists', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            })
+                .then(() => {
+                    document.getElementById('playlist-url').value = '';
+                    loadPlaylists();
+                });
+        }
+
+        function removerPlaylist(id) {
+            if (confirm('Remover playlist?')) {
+                fetch(`/api/playlists/${id}`, { method: 'DELETE' })
+                    .then(() => loadPlaylists());
             }
+        }
+
+        function loadStats() {
+            fetch('/get_stats')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector('#stats-table tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(stat => {
+                        let color = '#fff';
+                        if (stat.status_meta.includes('Atingida')) color = '#1DB954';
+
+                        const row = `<tr>
+                        <td>${stat.nome}</td>
+                        <td>${stat.plays_hoje}</td>
+                        <td>${stat.plays_mes}</td>
+                        <td>${stat.meta_mensal} (${stat.percentual}%)</td>
+                        <td><span style="color: ${color}; font-weight: bold">${stat.status_meta}</span></td>
+                    </tr>`;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+                });
         }
 
         function updateData() {
             fetch('/get_data')
                 .then(response => response.json())
                 .then(data => {
-                    // Atualizar tempos
+                    // Atualizar stats header
                     document.getElementById('tempo-restante').textContent = formatTime(data.tempo_restante_seg);
                     document.getElementById('tempo-planejado').textContent = formatTime(data.tempo_planejado_seg);
                     document.getElementById('devices-count').textContent = data.devices_online || 0;
 
-                    // Atualizar playlist
+                    // Config (se disponível)
+                    if (data.config && document.getElementById('reset-auto-toggle')) {
+                        // Check if reset_automatico is 1 or string "1"
+                        const isAuto = data.config.reset_automatico == 1;
+                        document.getElementById('reset-auto-toggle').checked = isAuto;
+                    }
+
+                    // Atualizar tabela da aba Adicionar (Fila de Hoje)
                     const tbody = document.getElementById('playlist-body');
                     tbody.innerHTML = '';
 
-                    data.playlist.forEach((item, index) => {
-                        const progress = item.plays_desejados > 0
-                            ? Math.min(100, (item.plays_atuais / item.plays_desejados) * 100)
-                            : 0;
+                    if (data.playlist) {
+                        data.playlist.forEach(item => {
+                            if (item.status === 'Concluído') return; // Oculta concluídos de hoje para limpar a vista
 
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
+                            const progress = item.plays_desejados > 0
+                                ? Math.min(100, (item.plays_atuais / item.plays_desejados) * 100) : 0;
+
+                            let statusClass = '';
+                            if (item.status === 'Pendente') statusClass = 'status-pendente';
+                            if (item.status === 'Em Execução') statusClass = 'status-execucao';
+
+                            const row = `<tr>
                             <td>
-                                <strong>${item.nome_musica}</strong>
-                                <br><small style="color: #666;">${item.link_musica.substring(0, 50)}...</small>
+                                <strong>${item.nome_musica}</strong><br>
+                                <small style="color: #666">...${item.link_musica.slice(-20)}</small>
                             </td>
                             <td>
                                 <div>${item.plays_atuais} / ${item.plays_desejados}</div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: ${progress}%"></div>
-                                </div>
+                                <div class="progress-bar"><div class="progress-fill" style="width: ${progress}%"></div></div>
                             </td>
-                            <td>${item.duracao_min} min</td>
-                            <td><span class="status ${getStatusClass(item.status)}">${item.status}</span></td>
-                            <td class="actions">
-                                <a href="/move_to_top/${item.id}" class="btn btn-secondary">⬆️ Topo</a>
-                                <a href="/delete/${item.id}" class="btn btn-danger" onclick="return confirm('Deletar esta música?')">🗑️</a>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                })
-                .catch(error => console.error('Erro ao atualizar dados:', error));
+                            <td><span class="status ${statusClass}">${item.status}</span></td>
+                            <td><a href="/delete/${item.id}" class="btn btn-danger" style="padding: 5px 10px">🗑️</a></td>
+                        </tr>`;
+                            tbody.insertAdjacentHTML('beforeend', row);
+                        });
+                    }
+                });
         }
 
-        // Atualizar dados a cada 5 segundos
+        // Init
         updateData();
         setInterval(updateData, 5000);
     </script>
