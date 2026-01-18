@@ -414,6 +414,18 @@ try:
     init_db()
     carregar_config()
     print("✅ Banco de dados pronto!")
+    
+    # Recupera a música em execução (caso o servidor tenha reiniciado)
+    playlist = carregar_playlist()
+    for m in playlist:
+        if m['status'] == 'Em Execução':
+            current_link_data['link'] = m['link_musica']
+            current_link_data['duracao_min'] = m['duracao_min']
+            current_link_data['nome'] = m['nome_musica']
+            current_link_data['timestamp'] = int(time.time())
+            print(f"🎵 Recuperada música em execução: {m['nome_musica']}")
+            break
+            
 except Exception as e:
     print(f"⚠️ Erro ao inicializar banco: {e}")
 
