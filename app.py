@@ -270,7 +270,7 @@ def motor_automacao():
 # --- API ENDPOINTS PARA O FLUTTER ---
 @app.route('/api/current_link')
 def api_current_link():
-    """Retorna o link atual para os dispositivos Flutter"""
+    """Retorna o link atual para os dispositivos Flutter - busca direto do banco"""
     device_id = request.args.get('device_id', 'unknown')
     
     # Registra heartbeat do dispositivo
@@ -279,7 +279,27 @@ def api_current_link():
     except:
         pass
     
-    return jsonify(current_link_data)
+    # Busca a música em execução diretamente do banco (resolve problema de workers)
+    try:
+        playlist = carregar_playlist()
+        for m in playlist:
+            if m['status'] == 'Em Execução':
+                return jsonify({
+                    "link": m['link_musica'],
+                    "duracao_min": m['duracao_min'],
+                    "nome": m['nome_musica'],
+                    "timestamp": int(m['plays_atuais'])  # Usa plays_atuais como "versão" para detectar mudanças
+                })
+    except Exception as e:
+        print(f"Erro ao buscar link: {e}")
+    
+    # Se não tem música em execução, retorna vazio
+    return jsonify({
+        "link": "",
+        "duracao_min": 3.0,
+        "nome": "",
+        "timestamp": 0
+    })
 
 @app.route('/api/heartbeat', methods=['POST'])
 def api_heartbeat():
