@@ -911,6 +911,46 @@ def move_to_top(id):
     conn.close()
     
     return redirect(url_for('index'))
+    
+@app.route('/debug/status')
+def debug_status():
+    """Retorna estado interno para debug"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Devices
+        cur.execute(f"SELECT COUNT(*) as count FROM devices WHERE last_seen > NOW() - INTERVAL '{DEVICE_TIMEOUT_SECONDS} seconds'")
+        dev_count = cur.fetchone()['count']
+        
+        # Devices Raw
+        cur.execute("SELECT device_id, last_seen, NOW() as now, NOW() - last_seen as diff FROM devices ORDER BY last_seen DESC LIMIT 5")
+        dev_raw = [dict(row) for row in cur.fetchall()]
+        
+        # Playlist Queue
+        cur.execute("SELECT id, nome_musica, status, plays_atuais, plays_desejados FROM playlist WHERE status != 'Concluído' ORDER BY id LIMIT 5")
+        queue = [dict(row) for row in cur.fetchall()]
+        
+        # Playlists Table (Collections)
+        cur.execute("SELECT id, nome, url FROM playlists")
+        cols = [dict(row) for row in cur.fetchall()]
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            "devices_online_count": dev_count,
+            "devices_raw": dev_raw,
+            "queue_pending_top_5": queue,
+            "playlists_collections_count": len(cols),
+            "playlists_collections": cols,
+            "server_time": datetime.now().isoformat(),
+            "cwd": os.getcwd(),
+            "playlists_txt_exists": os.path.exists('playlists.txt'),
+            "playlists_txt_abs": os.path.abspath('playlists.txt')
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # --- INICIALIZAÇÃO ---
 # Inicializa o banco de dados quando o módulo é carregado (funciona com Gunicorn)
