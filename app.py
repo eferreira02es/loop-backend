@@ -619,13 +619,15 @@ def api_current_link():
         playlist = carregar_playlist()
         for m in playlist:
             if m['status'] == 'Em Execução':
+                # Timestamp único baseado no ID da música e plays atuais
+                # Garante que muda sempre que plays_atuais muda
+                unique_timestamp = (m['id'] * 1000000) + m['plays_atuais']
+                
                 return jsonify({
                     "link": m['link_musica'],
                     "duracao_min": float(m['duracao_min']),
                     "nome": m['nome_musica'],
-                    # Timestamp deve ser o momento que começou a tocar, não os plays atuais
-                    # Se não tiver timestamp salvo, usa o tempo atual aproximado
-                    "timestamp": int(current_link_data.get('timestamp', time.time()))
+                    "timestamp": unique_timestamp
                 })
     except Exception as e:
         print(f"Erro ao buscar link: {e}")
