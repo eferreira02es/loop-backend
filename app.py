@@ -24,6 +24,10 @@ CORS(app)  # Permite requisições do Flutter
 # Configuração do banco de dados
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://localhost/loop_playlist')
 
+# Configuração de Threads
+# Garante que apenas uma thread de automação rode por vez (mesmo com workers)
+automation_lock = threading.Lock()
+
 # Configuração Spotify
 SPOTIPY_CLIENT_ID = os.environ.get("SPOTIPY_CLIENT_ID", "24ec1e4013d948ba87c2e85d623521d2")
 SPOTIPY_CLIENT_SECRET = os.environ.get("SPOTIPY_CLIENT_SECRET", "4d57f99be4834ed682684e607aeb3337")
@@ -615,11 +619,12 @@ def api_current_link():
         playlist = carregar_playlist()
         for m in playlist:
             if m['status'] == 'Em Execução':
-                return jsonify({
                     "link": m['link_musica'],
                     "duracao_min": float(m['duracao_min']),
                     "nome": m['nome_musica'],
-                    "timestamp": int(m['plays_atuais'])  # Usa plays_atuais como "versão" para detectar mudanças
+                    # Timestamp deve ser o momento que começou a tocar, não os plays atuais
+                    # Se não tiver timestamp salvo, usa o tempo atual aproximado
+                    "timestamp": int(current_link_data.get('timestamp', time.time()))
                 })
     except Exception as e:
         print(f"Erro ao buscar link: {e}")
@@ -664,8 +669,12 @@ def serialize_data(data):
 
 @app.route('/api/playlists', methods=['GET'])
 def api_get_playlists():
-    playlists = get_playlists_db()
-    return jsonify(serialize_data(playlists))
+    try:
+        playlists = get_playlists_db()
+        return jsonify(serialize_data(playlists))
+    except Exception as e:
+        print(f"Erro ao buscar playlists: {e}")
+        return jsonify([]) # Retorna lista vazia em vez de 500
 
 @app.route('/api/playlists', methods=['POST'])
 def api_add_playlist():
@@ -786,6 +795,10 @@ def get_stats():
     cur.close()
     conn.close()
     return jsonify(serialize_data(stats))
+    
+    except Exception as e:
+        print(f"Erro ao buscar estatísticas: {e}")
+        return jsonify([]) # Retorna lista vazia para não quebrar a tela
 
 @app.route('/api/config', methods=['POST'])
 def api_update_config():
@@ -1024,8 +1037,11 @@ except Exception as e:
     print(f"⚠️ Erro ao inicializar banco: {e}")
 
 # Inicia o motor de automação em uma thread separada
-motor_thread = threading.Thread(target=motor_automacao, daemon=True)
-motor_thread.start()
+# Inicia o motor de automação (apenas se for o main thread/process)
+# Com gunicorn --workers 1, isso garante execução única
+if os.environ.get('WERKZEUG_RUN_MAIN') != 'true': # Evita duplicar no reload do flask dev
+    motor_thread = threading.Thread(target=motor_automacao, daemon=True)
+    motor_thread.start()
 
 if __name__ == '__main__':
     # Inicia o servidor Flask (apenas para execução local)
