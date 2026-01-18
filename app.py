@@ -925,7 +925,14 @@ def debug_status():
         
         # Devices Raw
         cur.execute("SELECT device_id, last_seen, NOW() as now, NOW() - last_seen as diff FROM devices ORDER BY last_seen DESC LIMIT 5")
-        dev_raw = [dict(row) for row in cur.fetchall()]
+        rows = cur.fetchall()
+        dev_raw = []
+        for row in rows:
+            r = dict(row)
+            r['last_seen'] = r['last_seen'].isoformat() if r['last_seen'] else None
+            r['now'] = r['now'].isoformat() if r['now'] else None
+            r['diff'] = str(r['diff']) # Converte timedelta para string
+            dev_raw.append(r)
         
         # Playlist Queue
         cur.execute("SELECT id, nome_musica, status, plays_atuais, plays_desejados FROM playlist WHERE status != 'Concluído' ORDER BY id LIMIT 5")
