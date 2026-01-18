@@ -619,6 +619,7 @@ def api_current_link():
         playlist = carregar_playlist()
         for m in playlist:
             if m['status'] == 'Em Execução':
+                return jsonify({
                     "link": m['link_musica'],
                     "duracao_min": float(m['duracao_min']),
                     "nome": m['nome_musica'],
@@ -757,47 +758,48 @@ def api_job_status(job_id):
 @app.route('/get_stats')
 def get_stats():
     """Retorna estatísticas para a tela de controle"""
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # Busca dados de controle
-    cur.execute('SELECT * FROM musicas_controle')
-    controles = cur.fetchall()
-    
-    stats = []
-    for c in controles:
-        track_id = c['track_id']
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
         
-        # Calcula plays hoje (soma de todas as playlists dessa música)
-        cur.execute('SELECT SUM(plays_hoje) as hoje FROM playlist WHERE track_id = %s', (track_id,))
-        res = cur.fetchone()
-        plays_hoje = res['hoje'] if res and res['hoje'] else 0
+        # Busca dados de controle
+        cur.execute('SELECT * FROM musicas_controle')
+        controles = cur.fetchall()
         
-        status_meta = "Em Progresso"
-        percentual = 0
-        if c['meta_mensal'] > 0:
-            percentual = (c['plays_mes_atual'] / c['meta_mensal']) * 100
-            if percentual >= 100:
-                status_meta = "Meta Atingida!"
-            elif percentual >= 90:
-                status_meta = "Perto da Meta"
+        stats = []
+        for c in controles:
+            track_id = c['track_id']
+            
+            # Calcula plays hoje (soma de todas as playlists dessa música)
+            cur.execute('SELECT SUM(plays_hoje) as hoje FROM playlist WHERE track_id = %s', (track_id,))
+            res = cur.fetchone()
+            plays_hoje = res['hoje'] if res and res['hoje'] else 0
+            
+            status_meta = "Em Progresso"
+            percentual = 0
+            if c['meta_mensal'] > 0:
+                percentual = (c['plays_mes_atual'] / c['meta_mensal']) * 100
+                if percentual >= 100:
+                    status_meta = "Meta Atingida!"
+                elif percentual >= 90:
+                    status_meta = "Perto da Meta"
+            
+            stats.append({
+                "nome": c['nome'],
+                "plays_hoje": plays_hoje,
+                "plays_mes": c['plays_mes_atual'],
+                "meta_mensal": c['meta_mensal'],
+                "percentual": round(percentual, 1),
+                "status_meta": status_meta,
+                "track_id": track_id
+            })
         
-        stats.append({
-            "nome": c['nome'],
-            "plays_hoje": plays_hoje,
-            "plays_mes": c['plays_mes_atual'],
-            "meta_mensal": c['meta_mensal'],
-            "percentual": round(percentual, 1),
-            "status_meta": status_meta,
-            "track_id": track_id
-        })
-    
-    cur.close()
-    conn.close()
-    return jsonify(serialize_data(stats))
-    
+        cur.close()
+        conn.close()
+        return jsonify(serialize_data(stats))
     except Exception as e:
         print(f"Erro ao buscar estatísticas: {e}")
+        return jsonify([]) # Retorna lista vazia para não quebrar a tela
         return jsonify([]) # Retorna lista vazia para não quebrar a tela
 
 @app.route('/api/config', methods=['POST'])
