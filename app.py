@@ -2,7 +2,7 @@ import os
 import math
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from datetime import datetime, timedelta, date
+import datetime # Importando modulo inteiro para evitar conflitos
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_cors import CORS
 import threading
@@ -448,7 +448,7 @@ def executar_reset_diario():
             reativadas += 1
             
     # Atualiza data do último reset
-    hoje_str = datetime.now().strftime('%Y-%m-%d')
+    hoje_str = datetime.datetime.now().strftime('%Y-%m-%d')
     cur.execute('''
         INSERT INTO config (chave, valor) VALUES ('last_reset_date', %s)
         ON CONFLICT (chave) DO UPDATE SET valor = %s
@@ -486,20 +486,21 @@ def motor_automacao():
                 time.sleep(30)
                 continue
                 
-                # 2. PROCESSO DE RESET DIÁRIO (21h)
-                try:
-                    agora = datetime.utcnow() - timedelta(hours=3) # Horário de Brasília
-                    hoje_str = agora.strftime('%Y-%m-%d')
-                    
-                    # Verifica se já resetou hoje
-                    last_reset = config.get('last_reset_date', '')
-                    
-                    # Reseta se for >= 21h e ainda não tiver resetado hoje
-                    if agora.hour >= 21 and last_reset != hoje_str and config.get('reset_automatico', 1) == 1:
-                        executar_reset_diario()
-                        carregar_config() # Recarrega config
-                except Exception as e:
-                    print(f"Erro no reset diário: {e}")
+            # 2. PROCESSO DE RESET DIÁRIO (21h)
+            try:
+                # Usando namespace explicito datetime.datetime e datetime.timedelta
+                agora = datetime.datetime.utcnow() - datetime.timedelta(hours=3) # Horário de Brasília
+                hoje_str = agora.strftime('%Y-%m-%d')
+                
+                # Verifica se já resetou hoje
+                last_reset = config.get('last_reset_date', '')
+                
+                # Reseta se for >= 21h e ainda não tiver resetado hoje
+                if agora.hour >= 21 and last_reset != hoje_str and config.get('reset_automatico', 1) == 1:
+                    executar_reset_diario()
+                    carregar_config() # Recarrega config
+            except Exception as e:
+                print(f"Erro no reset diário: {e}")
 
             # 3. PROCESSAMENTO DA FILA
             playlist = carregar_playlist()
@@ -970,7 +971,7 @@ def debug_status():
             "queue_pending_top_5": queue,
             "playlists_collections_count": len(cols),
             "playlists_collections": cols,
-            "server_time": datetime.now().isoformat(),
+            "server_time": datetime.datetime.now().isoformat(),
             "cwd": os.getcwd(),
             "playlists_txt_exists": os.path.exists('playlists.txt'),
             "playlists_txt_abs": os.path.abspath('playlists.txt')
