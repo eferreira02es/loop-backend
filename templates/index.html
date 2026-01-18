@@ -326,298 +326,312 @@
                         <label>Plays Diários Desejados</label>
                         <input type="number" id="smart-plays" value="100" min="1">
                     </div>
-                    <div class="form-group">
-                        <label>Meta Mensal</label>
-                        <input type="number" id="smart-meta" value="3000" min="1">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Meta Mensal</label>
+                            <input type="number" id="smart-meta" value="3000" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Ciclo (Minutos) - Opcional</label>
+                            <input type="number" id="smart-duracao" placeholder="Auto (Spotify)" step="0.1" min="0.1">
+                            <small style="color: #666">Deixe vazio para usar duração do Spotify</small>
+                        </div>
+                    </div>
+                    <button onclick="adicionarMusicaSmart()" class="btn btn-primary" style="width: 100%">Validar e
+                        Adicionar</button>
+                </div>
+
+                <div class="card">
+                    <h2>Fila de Execução (Hoje)</h2>
+                    <div class="actions" style="margin-bottom: 15px;">
+                        <a href="/reset_all_plays" class="btn btn-danger"
+                            onclick="return confirm('Resetar fila?')">Resetar
+                            Fila</a>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Música</th>
+                                <th>Progresso</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playlist-body">
+                            <!-- JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab: Gerenciar Playlists -->
+            <div id="playlists" class="tab-content">
+                <div class="card">
+                    <h2>Adicionar Nova Playlist</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Link da Playlist</label>
+                            <input type="url" id="playlist-url" placeholder="https://open.spotify.com/playlist/...">
+                        </div>
+                        <div class="form-group" style="justify-content: flex-end;">
+                            <button onclick="adicionarPlaylist()" class="btn btn-primary">Adicionar</button>
+                        </div>
                     </div>
                 </div>
-                <button onclick="adicionarMusicaSmart()" class="btn btn-primary" style="width: 100%">Validar e
-                    Adicionar</button>
-            </div>
 
-            <div class="card">
-                <h2>Fila de Execução (Hoje)</h2>
-                <div class="actions" style="margin-bottom: 15px;">
-                    <a href="/reset_all_plays" class="btn btn-danger" onclick="return confirm('Resetar fila?')">Resetar
-                        Fila</a>
+                <div class="card">
+                    <h2>Playlists Cadastradas</h2>
+                    <table id="playlists-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Link</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JS -->
+                        </tbody>
+                    </table>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Música</th>
-                            <th>Progresso</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="playlist-body">
-                        <!-- JS -->
-                    </tbody>
-                </table>
             </div>
-        </div>
 
-        <!-- Tab: Gerenciar Playlists -->
-        <div id="playlists" class="tab-content">
-            <div class="card">
-                <h2>Adicionar Nova Playlist</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Link da Playlist</label>
-                        <input type="url" id="playlist-url" placeholder="https://open.spotify.com/playlist/...">
-                    </div>
-                    <div class="form-group" style="justify-content: flex-end;">
-                        <button onclick="adicionarPlaylist()" class="btn btn-primary">Adicionar</button>
+            <!-- Tab: Controle & Config -->
+            <div id="controle" class="tab-content">
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Configurações</h2>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label for="reset-auto-toggle">Reset Automático (21h)</label>
+                        <input type="checkbox" id="reset-auto-toggle" onchange="toggleResetAuto(this)"
+                            style="width: auto;">
                     </div>
                 </div>
-            </div>
 
-            <div class="card">
-                <h2>Playlists Cadastradas</h2>
-                <table id="playlists-table">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Link</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Tab: Controle & Config -->
-        <div id="controle" class="tab-content">
-            <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>Configurações</h2>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <label for="reset-auto-toggle">Reset Automático (21h)</label>
-                    <input type="checkbox" id="reset-auto-toggle" onchange="toggleResetAuto(this)" style="width: auto;">
+                <div class="card">
+                    <h2>Painel de Controle Mensal</h2>
+                    <table id="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Música</th>
+                                <th>Plays Hoje</th>
+                                <th>Plays Mês</th>
+                                <th>Meta Mensal</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="card">
-                <h2>Painel de Controle Mensal</h2>
-                <table id="stats-table">
-                    <thead>
-                        <tr>
-                            <th>Música</th>
-                            <th>Plays Hoje</th>
-                            <th>Plays Mês</th>
-                            <th>Meta Mensal</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- JS -->
-                    </tbody>
-                </table>
+            <!-- Modal Loading -->
+            <div id="loading" class="modal">
+                <div class="modal-content">
+                    <h3 style="color: #1DB954; margin-bottom: 15px;">Processando...</h3>
+                    <p id="loading-text">Validando música nas playlists...</p>
+                </div>
             </div>
+
         </div>
 
-        <!-- Modal Loading -->
-        <div id="loading" class="modal">
-            <div class="modal-content">
-                <h3 style="color: #1DB954; margin-bottom: 15px;">Processando...</h3>
-                <p id="loading-text">Validando música nas playlists...</p>
-            </div>
-        </div>
+        <script>
+            // Tabs Logic
+            function openTab(tabName) {
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-    </div>
+                document.getElementById(tabName).classList.add('active');
+                event.target.classList.add('active');
 
-    <script>
-        // Tabs Logic
-        function openTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-
-            if (tabName === 'playlists') loadPlaylists();
-            if (tabName === 'controle') {
-                loadStats();
-                loadConfig();
+                if (tabName === 'playlists') loadPlaylists();
+                if (tabName === 'controle') {
+                    loadStats();
+                    loadConfig();
+                }
             }
-        }
 
-        function formatTime(seconds) {
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = Math.floor(seconds % 60);
-            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        }
+            function formatTime(seconds) {
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                const s = Math.floor(seconds % 60);
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
 
-        // --- API CALLS ---
+            // --- API CALLS ---
 
-        function loadConfig() {
-            // A leitura da config é feita via /get_data no loop principal
-            // Mas podemos forçar atualização se necessário
-        }
+            function loadConfig() {
+                // A leitura da config é feita via /get_data no loop principal
+                // Mas podemos forçar atualização se necessário
+            }
 
-        function toggleResetAuto(checkbox) {
-            const valor = checkbox.checked ? 1 : 0;
-            fetch('/api/config', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chave: 'reset_automatico', valor })
-            });
-        }
-
-        function adicionarMusicaSmart() {
-            const link = document.getElementById('smart-link').value;
-            const plays = document.getElementById('smart-plays').value;
-            const meta = document.getElementById('smart-meta').value;
-
-            if (!link) return alert("Link obrigatório");
-
-            document.getElementById('loading').style.display = 'flex';
-            document.getElementById('loading-text').textContent = 'Iniciando validação (Isso pode demorar uns min)...';
-
-            // 1. Inicia o Job
-            fetch('/api/add_music_smart', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ link, plays_diarios: plays, meta_mensal: meta })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.error) throw new Error(data.error);
-
-                    // 2. Faz Polling do Status
-                    pollJobStatus(data.job_id);
-                })
-                .catch(err => {
-                    document.getElementById('loading').style.display = 'none';
-                    alert('Erro ao iniciar: ' + err.message);
+            function toggleResetAuto(checkbox) {
+                const valor = checkbox.checked ? 1 : 0;
+                fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chave: 'reset_automatico', valor })
                 });
-        }
+            }
 
-        function pollJobStatus(jobId) {
-            const interval = setInterval(() => {
-                fetch(`/api/job_status/${jobId}`)
+            function adicionarMusicaSmart() {
+                const link = document.getElementById('smart-link').value;
+                const plays = document.getElementById('smart-plays').value;
+                const meta = document.getElementById('smart-meta').value;
+                const duracao = document.getElementById('smart-duracao').value;
+
+                if (!link) return alert("Link obrigatório");
+
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('loading-text').textContent = 'Iniciando validação (Isso pode demorar uns min)...';
+
+                // 1. Inicia o Job
+                fetch('/api/add_music_smart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        link,
+                        plays_diarios: plays,
+                        meta_mensal: meta,
+                        duracao_manual: duracao
+                    })
+                })
                     .then(res => res.json())
-                    .then(job => {
-                        const loadingText = document.getElementById('loading-text');
+                    .then(data => {
+                        if (data.error) throw new Error(data.error);
 
-                        if (job.status === 'processing') {
-                            loadingText.textContent = job.message;
-                        } else if (job.status === 'completed') {
-                            clearInterval(interval);
-                            document.getElementById('loading').style.display = 'none';
-                            alert(job.message);
-                            document.getElementById('smart-link').value = '';
-                            updateData();
-                        } else if (job.status === 'error') {
-                            clearInterval(interval);
-                            document.getElementById('loading').style.display = 'none';
-                            alert('Erro: ' + job.message);
-                        }
+                        // 2. Faz Polling do Status
+                        pollJobStatus(data.job_id);
                     })
                     .catch(err => {
-                        clearInterval(interval);
                         document.getElementById('loading').style.display = 'none';
-                        alert('Erro de conexão: ' + err);
+                        alert('Erro ao iniciar: ' + err.message);
                     });
-            }, 2000); // Poll a cada 2 segundos
-        }
+            }
 
-        function loadPlaylists() {
-            fetch('/api/playlists')
-                .then(res => res.json())
-                .then(data => {
-                    const tbody = document.querySelector('#playlists-table tbody');
-                    tbody.innerHTML = '';
-                    data.forEach(pl => {
-                        const row = `<tr>
+            function pollJobStatus(jobId) {
+                const interval = setInterval(() => {
+                    fetch(`/api/job_status/${jobId}`)
+                        .then(res => res.json())
+                        .then(job => {
+                            const loadingText = document.getElementById('loading-text');
+
+                            if (job.status === 'processing') {
+                                loadingText.textContent = job.message;
+                            } else if (job.status === 'completed') {
+                                clearInterval(interval);
+                                document.getElementById('loading').style.display = 'none';
+                                alert(job.message);
+                                document.getElementById('smart-link').value = '';
+                                updateData();
+                            } else if (job.status === 'error') {
+                                clearInterval(interval);
+                                document.getElementById('loading').style.display = 'none';
+                                alert('Erro: ' + job.message);
+                            }
+                        })
+                        .catch(err => {
+                            clearInterval(interval);
+                            document.getElementById('loading').style.display = 'none';
+                            alert('Erro de conexão: ' + err);
+                        });
+                }, 2000); // Poll a cada 2 segundos
+            }
+
+            function loadPlaylists() {
+                fetch('/api/playlists')
+                    .then(res => res.json())
+                    .then(data => {
+                        const tbody = document.querySelector('#playlists-table tbody');
+                        tbody.innerHTML = '';
+                        data.forEach(pl => {
+                            const row = `<tr>
                         <td>${pl.nome || 'Playlist'}</td>
                         <td><a href="${pl.url}" target="_blank" style="color: #1DB954">Abrir Spotify</a></td>
                         <td><button onclick="removerPlaylist(${pl.id})" class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem">X</button></td>
                     </tr>`;
-                        tbody.insertAdjacentHTML('beforeend', row);
+                            tbody.insertAdjacentHTML('beforeend', row);
+                        });
                     });
-                });
-        }
-
-        function adicionarPlaylist() {
-            const url = document.getElementById('playlist-url').value;
-            if (!url) return;
-
-            fetch('/api/playlists', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
-            })
-                .then(() => {
-                    document.getElementById('playlist-url').value = '';
-                    loadPlaylists();
-                });
-        }
-
-        function removerPlaylist(id) {
-            if (confirm('Remover playlist?')) {
-                fetch(`/api/playlists/${id}`, { method: 'DELETE' })
-                    .then(() => loadPlaylists());
             }
-        }
 
-        function loadStats() {
-            fetch('/get_stats')
-                .then(res => res.json())
-                .then(data => {
-                    const tbody = document.querySelector('#stats-table tbody');
-                    tbody.innerHTML = '';
-                    data.forEach(stat => {
-                        let color = '#fff';
-                        if (stat.status_meta.includes('Atingida')) color = '#1DB954';
+            function adicionarPlaylist() {
+                const url = document.getElementById('playlist-url').value;
+                if (!url) return;
 
-                        const row = `<tr>
+                fetch('/api/playlists', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                })
+                    .then(() => {
+                        document.getElementById('playlist-url').value = '';
+                        loadPlaylists();
+                    });
+            }
+
+            function removerPlaylist(id) {
+                if (confirm('Remover playlist?')) {
+                    fetch(`/api/playlists/${id}`, { method: 'DELETE' })
+                        .then(() => loadPlaylists());
+                }
+            }
+
+            function loadStats() {
+                fetch('/get_stats')
+                    .then(res => res.json())
+                    .then(data => {
+                        const tbody = document.querySelector('#stats-table tbody');
+                        tbody.innerHTML = '';
+                        data.forEach(stat => {
+                            let color = '#fff';
+                            if (stat.status_meta.includes('Atingida')) color = '#1DB954';
+
+                            const row = `<tr>
                         <td>${stat.nome}</td>
                         <td>${stat.plays_hoje}</td>
                         <td>${stat.plays_mes}</td>
                         <td>${stat.meta_mensal} (${stat.percentual}%)</td>
                         <td><span style="color: ${color}; font-weight: bold">${stat.status_meta}</span></td>
                     </tr>`;
-                        tbody.insertAdjacentHTML('beforeend', row);
+                            tbody.insertAdjacentHTML('beforeend', row);
+                        });
                     });
-                });
-        }
+            }
 
-        function updateData() {
-            fetch('/get_data')
-                .then(response => response.json())
-                .then(data => {
-                    // Atualizar stats header
-                    document.getElementById('tempo-restante').textContent = formatTime(data.tempo_restante_seg);
-                    document.getElementById('tempo-planejado').textContent = formatTime(data.tempo_planejado_seg);
-                    document.getElementById('devices-count').textContent = data.devices_online || 0;
+            function updateData() {
+                fetch('/get_data')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Atualizar stats header
+                        document.getElementById('tempo-restante').textContent = formatTime(data.tempo_restante_seg);
+                        document.getElementById('tempo-planejado').textContent = formatTime(data.tempo_planejado_seg);
+                        document.getElementById('devices-count').textContent = data.devices_online || 0;
 
-                    // Config (se disponível)
-                    if (data.config && document.getElementById('reset-auto-toggle')) {
-                        // Check if reset_automatico is 1 or string "1"
-                        const isAuto = data.config.reset_automatico == 1;
-                        document.getElementById('reset-auto-toggle').checked = isAuto;
-                    }
+                        // Config (se disponível)
+                        if (data.config && document.getElementById('reset-auto-toggle')) {
+                            // Check if reset_automatico is 1 or string "1"
+                            const isAuto = data.config.reset_automatico == 1;
+                            document.getElementById('reset-auto-toggle').checked = isAuto;
+                        }
 
-                    // Atualizar tabela da aba Adicionar (Fila de Hoje)
-                    const tbody = document.getElementById('playlist-body');
-                    tbody.innerHTML = '';
+                        // Atualizar tabela da aba Adicionar (Fila de Hoje)
+                        const tbody = document.getElementById('playlist-body');
+                        tbody.innerHTML = '';
 
-                    if (data.playlist) {
-                        data.playlist.forEach(item => {
-                            if (item.status === 'Concluído') return; // Oculta concluídos de hoje para limpar a vista
+                        if (data.playlist) {
+                            data.playlist.forEach(item => {
+                                if (item.status === 'Concluído') return; // Oculta concluídos de hoje para limpar a vista
 
-                            const progress = item.plays_desejados > 0
-                                ? Math.min(100, (item.plays_atuais / item.plays_desejados) * 100) : 0;
+                                const progress = item.plays_desejados > 0
+                                    ? Math.min(100, (item.plays_atuais / item.plays_desejados) * 100) : 0;
 
-                            let statusClass = '';
-                            if (item.status === 'Pendente') statusClass = 'status-pendente';
-                            if (item.status === 'Em Execução') statusClass = 'status-execucao';
+                                let statusClass = '';
+                                if (item.status === 'Pendente') statusClass = 'status-pendente';
+                                if (item.status === 'Em Execução') statusClass = 'status-execucao';
 
-                            const row = `<tr>
+                                const row = `<tr>
                             <td>
                                 <strong>${item.nome_musica}</strong><br>
                                 <small style="color: #666">...${item.link_musica.slice(-20)}</small>
@@ -629,16 +643,16 @@
                             <td><span class="status ${statusClass}">${item.status}</span></td>
                             <td><a href="/delete/${item.id}" class="btn btn-danger" style="padding: 5px 10px">🗑️</a></td>
                         </tr>`;
-                            tbody.insertAdjacentHTML('beforeend', row);
-                        });
-                    }
-                });
-        }
+                                tbody.insertAdjacentHTML('beforeend', row);
+                            });
+                        }
+                    });
+            }
 
-        // Init
-        updateData();
-        setInterval(updateData, 5000);
-    </script>
+            // Init
+            updateData();
+            setInterval(updateData, 5000);
+        </script>
 </body>
 
 </html>

@@ -244,12 +244,12 @@ def registrar_heartbeat(device_id):
     conn.close()
 
 def contar_dispositivos_ativos():
-    """Conta dispositivos que fizeram heartbeat nos últimos 60 segundos"""
+    """Conta dispositivos que fizeram heartbeat nos últimos 5 minutos"""
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('''
+    cur.execute(f'''
         SELECT COUNT(*) as count FROM devices 
-        WHERE last_seen > NOW() - INTERVAL '60 seconds'
+        WHERE last_seen > NOW() - INTERVAL '{DEVICE_TIMEOUT_SECONDS} seconds'
     ''')
     result = cur.fetchone()
     cur.close()
@@ -286,7 +286,7 @@ def remover_playlist_db(id):
 
 # --- LÓGICA DE NEGÓCIO ---
 
-def validar_musica_playlists(link_musica, plays_desejados_dia, meta_mensal):
+def validar_musica_playlists(link_musica, plays_desejados_dia, meta_mensal, duracao_manual=None):
     """
     Valida em quais playlists a música está e prepara as entradas.
     Retorna lista de músicas a adicionar e informações de status.
@@ -302,7 +302,14 @@ def validar_musica_playlists(link_musica, plays_desejados_dia, meta_mensal):
     try:
         track_info = sp.track(track_id)
         nome_musica = track_info['name']
-        duracao_min = round(track_info['duration_ms'] / 60000, 1)
+        
+        # Se usuário definiu duração manual, usa ela
+        if duracao_manual and float(duracao_manual) > 0.0:
+            duracao_min = float(duracao_manual)
+            print(f"⏱️ Usando duração manual: {duracao_min} min")
+        else:
+            duracao_min = round(track_info['duration_ms'] / 60000, 1)
+            
         # Artista - Nome
         artistas = ", ".join([artist['name'] for artist in track_info['artists']])
         nome_completo = f"{artistas} - {nome_musica}"
@@ -667,7 +674,7 @@ def api_remove_playlist(id):
 # --- SISTEMA DE JOBS EM BACKGROUND ---
 jobs = {}
 
-def processar_validacao_background(job_id, link, plays_diarios, meta_mensal):
+def processar_validacao_background(job_id, link, plays_diarios, meta_mensal, duracao_manual):
     """Executa a validação em thread separada"""
     try:
         jobs[job_id] = {"status": "processing", "message": "Validando músicas nas playlists..."}
@@ -675,7 +682,7 @@ def processar_validacao_background(job_id, link, plays_diarios, meta_mensal):
         # Simula um pequeno delay para garantir que o status seja lido
         time.sleep(1)
         
-        resultado = validar_musica_playlists(link, plays_diarios, meta_mensal)
+        resultado = validar_musica_playlists(link, plays_diarios, meta_mensal, duracao_manual)
         
         if "error" in resultado:
             jobs[job_id] = {"status": "error", "message": resultado["error"]}
@@ -695,6 +702,7 @@ def api_add_music_smart():
     link = data.get('link')
     plays_diarios = int(data.get('plays_diarios', 100))
     meta_mensal = int(data.get('meta_mensal', 3000))
+    duracao_manual = data.get('duracao_manual') # Opcional
     
     if not link:
         return jsonify({"error": "Link obrigatório"}), 400
@@ -704,7 +712,7 @@ def api_add_music_smart():
     jobs[job_id] = {"status": "queued", "message": "Iniciando validação..."}
     
     # Inicia thread
-    thread = threading.Thread(target=processar_validacao_background, args=(job_id, link, plays_diarios, meta_mensal))
+    thread = threading.Thread(target=processar_validacao_background, args=(job_id, link, plays_diarios, meta_mensal, duracao_manual))
     thread.daemon = True
     thread.start()
     
