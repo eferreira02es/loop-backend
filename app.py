@@ -638,11 +638,12 @@ def api_current_link():
         playlist = carregar_playlist()
         for m in playlist:
             if m['status'] == 'Em Execução':
-                # Timestamp ESTÁVEL dentro de um ciclo:
-                # - Usa ID * 10000 + plays_atuais
-                # - Só muda quando o motor incrementa plays_atuais (a cada ciclo)
-                # - NÃO usa time.time() para evitar mudanças a cada segundo
-                unique_timestamp = (m['id'] * 10000) + m['plays_atuais']
+                # Timestamp ESTÁVEL para a mesma música:
+                # - Usa APENAS o ID da música * 10000
+                # - Só muda quando a MÚSICA muda (novo ID)
+                # - NÃO muda quando plays são incrementados
+                # Isso evita que o celular reabra a mesma música várias vezes
+                unique_timestamp = m['id'] * 10000
                 
                 return jsonify({
                     "link": m['link_musica'],
