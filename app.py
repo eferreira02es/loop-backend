@@ -723,34 +723,11 @@ def api_add_playlist():
 def api_remove_playlist(id):
     remover_playlist_db(id)
     return jsonify({"status": "ok"})
-
-# --- SISTEMA DE JOBS EM BACKGROUND ---
-jobs = {}
-
-def processar_validacao_background(job_id, link, plays_diarios, meta_mensal, duracao_manual):
-    """Executa a validação em thread separada"""
-    try:
-        jobs[job_id] = {"status": "processing", "message": "Validando músicas nas playlists..."}
-        
-        # Simula um pequeno delay para garantir que o status seja lido
-        time.sleep(1)
-        
-        resultado = validar_musica_playlists(link, plays_diarios, meta_mensal, duracao_manual)
-        
-        if "error" in resultado:
-            jobs[job_id] = {"status": "error", "message": resultado["error"]}
-        else:
-            salvar_validacao(resultado)
-            jobs[job_id] = {
-                "status": "completed", 
-                "message": f"Sucesso! Encontrada em {len(resultado['playlists_encontradas'])} playlists.",
-                "resultado": resultado
-            }
-    except Exception as e:
-        jobs[job_id] = {"status": "error", "message": f"Erro interno: {str(e)}"}
+# --- ENDPOINT PARA ADICIONAR MÚSICA ---
 
 @app.route('/api/add_music_smart', methods=['POST'])
 def api_add_music_smart():
+    """Adiciona música com validação - processamento síncrono"""
     data = request.json
     link = data.get('link')
     plays_diarios = int(data.get('plays_diarios', 100))
@@ -758,25 +735,26 @@ def api_add_music_smart():
     duracao_manual = data.get('duracao_manual') # Opcional
     
     if not link:
-        return jsonify({"error": "Link obrigatório"}), 400
+        return jsonify({"status": "error", "message": "Link obrigatório"}), 400
+    
+    try:
+        # Processa de forma síncrona (mais confiável com múltiplos workers)
+        resultado = validar_musica_playlists(link, plays_diarios, meta_mensal, duracao_manual)
         
-    # Cria um ID para o job
-    job_id = str(int(time.time() * 1000))
-    jobs[job_id] = {"status": "queued", "message": "Iniciando validação..."}
-    
-    # Inicia thread
-    thread = threading.Thread(target=processar_validacao_background, args=(job_id, link, plays_diarios, meta_mensal, duracao_manual))
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({"status": "ok", "job_id": job_id})
-
-@app.route('/api/job_status/<job_id>')
-def api_job_status(job_id):
-    job = jobs.get(job_id)
-    if not job:
-        return jsonify({"status": "error", "message": "Job não encontrado"}), 404
-    return jsonify(job)
+        if "error" in resultado:
+            return jsonify({"status": "error", "message": resultado["error"]}), 400
+        
+        # Salva no banco
+        salvar_validacao(resultado)
+        
+        return jsonify({
+            "status": "completed",
+            "message": f"Sucesso! Encontrada em {len(resultado['playlists_encontradas'])} playlists.",
+            "resultado": resultado
+        })
+    except Exception as e:
+        print(f"Erro ao adicionar música: {e}")
+        return jsonify({"status": "error", "message": f"Erro interno: {str(e)}"}), 500
 
 @app.route('/get_stats')
 def get_stats():
