@@ -151,6 +151,17 @@ def init_db():
         )
     ''')
     
+    # Nova Tabela: plays_diarios (histórico de plays por dia)
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS plays_diarios (
+            id SERIAL PRIMARY KEY,
+            track_id TEXT NOT NULL,
+            data DATE NOT NULL,
+            plays INTEGER DEFAULT 0,
+            UNIQUE(track_id, data)
+        )
+    ''')
+    
     # Inserir configuração padrão se não existir
     default_configs = [
         ('quantidade_aparelhos', '200'),
@@ -578,6 +589,14 @@ def motor_automacao():
                             WHERE track_id = %s
                         ''', (plays_a_somar, musica_atual['track_id']))
                         
+                        # Registra histórico diário para gráficos
+                        cur.execute('''
+                            INSERT INTO plays_diarios (track_id, data, plays)
+                            VALUES (%s, CURRENT_DATE, %s)
+                            ON CONFLICT (track_id, data) 
+                            DO UPDATE SET plays = plays_diarios.plays + %s
+                        ''', (musica_atual['track_id'], plays_a_somar, plays_a_somar))
+                        
                     conn.commit()
                     cur.close()
                     conn.close()
@@ -804,7 +823,41 @@ def get_stats():
     except Exception as e:
         print(f"Erro ao buscar estatísticas: {e}")
         return jsonify([]) # Retorna lista vazia para não quebrar a tela
-        return jsonify([]) # Retorna lista vazia para não quebrar a tela
+
+@app.route('/api/plays_history/<track_id>')
+def api_plays_history(track_id):
+    """Retorna histórico de plays diários para um track específico"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Busca últimos 30 dias de histórico
+        cur.execute('''
+            SELECT data, plays FROM plays_diarios 
+            WHERE track_id = %s 
+            ORDER BY data DESC 
+            LIMIT 30
+        ''', (track_id,))
+        
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        
+        # Formata para o gráfico
+        history = []
+        for row in rows:
+            history.append({
+                "data": row['data'].strftime('%d/%m') if row['data'] else '',
+                "plays": row['plays']
+            })
+        
+        # Inverte para ordem cronológica
+        history.reverse()
+        
+        return jsonify(history)
+    except Exception as e:
+        print(f"Erro ao buscar histórico: {e}")
+        return jsonify([])
 
 @app.route('/api/config', methods=['POST'])
 def api_update_config():

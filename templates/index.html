@@ -280,6 +280,7 @@
             text-align: center;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -399,11 +400,23 @@
 
         <!-- Tab: Controle & Config -->
         <div id="controle" class="tab-content">
-            <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card"
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <h2>Configurações</h2>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <label for="reset-auto-toggle">Reset Automático (21h)</label>
-                    <input type="checkbox" id="reset-auto-toggle" onchange="toggleResetAuto(this)" style="width: auto;">
+                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label for="status-filter">Filtrar:</label>
+                        <select id="status-filter" onchange="loadStats()" style="padding: 8px; border-radius: 5px;">
+                            <option value="todos">Todos</option>
+                            <option value="progresso">Em Progresso</option>
+                            <option value="atingida">Meta Atingida</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label for="reset-auto-toggle">Reset Automático (21h)</label>
+                        <input type="checkbox" id="reset-auto-toggle" onchange="toggleResetAuto(this)"
+                            style="width: auto;">
+                    </div>
                 </div>
             </div>
 
@@ -417,12 +430,22 @@
                             <th>Plays Mês</th>
                             <th>Meta Mensal</th>
                             <th>Status</th>
+                            <th>Gráfico</th>
                         </tr>
                     </thead>
                     <tbody>
                         <!-- JS -->
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Gráfico de Linha do Tempo -->
+            <div class="card" id="chart-container" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 id="chart-title">Histórico de Plays</h2>
+                    <button onclick="hideChart()" class="btn btn-secondary" style="padding: 5px 15px;">✕ Fechar</button>
+                </div>
+                <canvas id="playsChart" height="100"></canvas>
             </div>
         </div>
 
@@ -592,6 +615,9 @@
             }
         }
 
+        let allStatsData = []; // Guarda todos os dados para filtro
+        let playsChart = null; // Referência ao gráfico
+
         function loadStats() {
             fetch('/get_stats')
                 .then(res => {
@@ -599,30 +625,101 @@
                     return res.json();
                 })
                 .then(data => {
-                    const tbody = document.querySelector('#stats-table tbody');
-                    tbody.innerHTML = '';
-                    if (!data || data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5">Sem dados de estatísticas.</td></tr>';
-                        return;
-                    }
-                    data.forEach(stat => {
-                        let color = '#fff';
-                        if (stat.status_meta.includes('Atingida')) color = '#1DB954';
-
-                        const row = `<tr>
-                        <td>${stat.nome}</td>
-                        <td>${stat.plays_hoje}</td>
-                        <td>${stat.plays_mes}</td>
-                        <td>${stat.meta_mensal} (${stat.percentual}%)</td>
-                        <td><span style="color: ${color}; font-weight: bold">${stat.status_meta}</span></td>
-                    </tr>`;
-                        tbody.insertAdjacentHTML('beforeend', row);
-                    });
+                    allStatsData = data; // Salva para filtro
+                    renderStats(data);
                 })
                 .catch(err => {
                     console.error(err);
                     alert("Erro ao carregar metas: " + err.message);
                 });
+        }
+
+        function renderStats(data) {
+            const filter = document.getElementById('status-filter')?.value || 'todos';
+            const tbody = document.querySelector('#stats-table tbody');
+            tbody.innerHTML = '';
+
+            // Aplica filtro
+            let filtered = data;
+            if (filter === 'progresso') {
+                filtered = data.filter(s => s.status_meta.includes('Progresso'));
+            } else if (filter === 'atingida') {
+                filtered = data.filter(s => s.status_meta.includes('Atingida'));
+            }
+
+            if (!filtered || filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">Sem dados para este filtro.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(stat => {
+                let color = '#fff';
+                if (stat.status_meta.includes('Atingida')) color = '#1DB954';
+
+                const row = `<tr>
+                    <td>${stat.nome}</td>
+                    <td>${stat.plays_hoje}</td>
+                    <td>${stat.plays_mes}</td>
+                    <td>${stat.meta_mensal} (${stat.percentual}%)</td>
+                    <td><span style="color: ${color}; font-weight: bold">${stat.status_meta}</span></td>
+                    <td><button onclick="showChart('${stat.track_id}', '${stat.nome.replace(/'/g, "\\'").substring(0, 30)}')" class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;">📊</button></td>
+                </tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function showChart(trackId, trackName) {
+            document.getElementById('chart-container').style.display = 'block';
+            document.getElementById('chart-title').textContent = `Histórico: ${trackName}`;
+
+            fetch(`/api/plays_history/${trackId}`)
+                .then(res => res.json())
+                .then(history => {
+                    const labels = history.map(h => h.data);
+                    const plays = history.map(h => h.plays);
+
+                    // Destroi gráfico anterior se existir
+                    if (playsChart) {
+                        playsChart.destroy();
+                    }
+
+                    const ctx = document.getElementById('playsChart').getContext('2d');
+                    playsChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Plays por Dia',
+                                data: plays,
+                                borderColor: '#1DB954',
+                                backgroundColor: 'rgba(29, 185, 84, 0.1)',
+                                fill: true,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                                x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                            }
+                        }
+                    });
+
+                    // Scroll para o gráfico
+                    document.getElementById('chart-container').scrollIntoView({ behavior: 'smooth' });
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Erro ao carregar histórico: ' + err.message);
+                });
+        }
+
+        function hideChart() {
+            document.getElementById('chart-container').style.display = 'none';
         }
 
         function updateData() {
