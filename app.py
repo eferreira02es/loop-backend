@@ -638,12 +638,10 @@ def api_current_link():
         playlist = carregar_playlist()
         for m in playlist:
             if m['status'] == 'Em Execução':
-                # Timestamp ESTÁVEL para a mesma música:
-                # - Usa APENAS o ID da música * 10000
-                # - Só muda quando a MÚSICA muda (novo ID)
-                # - NÃO muda quando plays são incrementados
-                # Isso evita que o celular reabra a mesma música várias vezes
-                unique_timestamp = m['id'] * 10000
+                # Timestamp usando time.time() para sempre aumentar
+                # O app Flutter vai comparar o LINK, não o timestamp
+                # Timestamp só indica que o servidor está respondendo
+                unique_timestamp = int(time.time())
                 
                 return jsonify({
                     "link": m['link_musica'],
