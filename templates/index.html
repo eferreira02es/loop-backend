@@ -310,6 +310,7 @@
             <button class="tab-btn active" onclick="openTab('adicionar')">➕ Adicionar Música</button>
             <button class="tab-btn" onclick="openTab('playlists')">📋 Gerenciar Playlists</button>
             <button class="tab-btn" onclick="openTab('controle')">📊 Controle & Metas</button>
+            <button class="tab-btn" onclick="openTab('todas')">🎵 Todas as Músicas</button>
         </div>
 
         <!-- Tab: Adicionar Música (Smart) -->
@@ -449,6 +450,33 @@
             </div>
         </div>
 
+        <!-- Tab: Todas as Músicas -->
+        <div id="todas" class="tab-content">
+            <div class="card">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <h2>🎵 Todas as Músicas no Banco</h2>
+                    <button onclick="deleteAllSongs()" class="btn btn-danger">🗑️ Deletar Tudo</button>
+                </div>
+                <p style="color: #888; margin: 10px 0;">Músicas rastreadas na tabela de controle (meta mensal)</p>
+                <table id="all-songs-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Track ID</th>
+                            <th>Plays Mês</th>
+                            <th>Meta</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Modal Loading -->
         <div id="loading" class="modal">
             <div class="modal-content">
@@ -471,6 +499,58 @@
             if (tabName === 'controle') {
                 loadStats();
                 loadConfig();
+            }
+            if (tabName === 'todas') loadAllSongs();
+        }
+
+        function loadAllSongs() {
+            fetch('/api/all_songs')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector('#all-songs-table tbody');
+                    tbody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6">Nenhuma música no banco.</td></tr>';
+                        return;
+                    }
+                    data.forEach(song => {
+                        const row = `<tr>
+                            <td>${song.id}</td>
+                            <td>${song.nome || 'Sem nome'}</td>
+                            <td style="font-size: 0.8rem; color: #888;">${song.track_id?.substring(0, 15) || '-'}...</td>
+                            <td>${song.plays_mes_atual || 0}</td>
+                            <td>${song.meta_mensal || 0}</td>
+                            <td><button onclick="deleteSong(${song.id})" class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;">🗑️</button></td>
+                        </tr>`;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+                })
+                .catch(err => alert('Erro ao carregar músicas: ' + err.message));
+        }
+
+        function deleteSong(id) {
+            if (confirm('Deletar esta música do banco?')) {
+                fetch(`/api/songs/${id}`, { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) throw new Error(data.error);
+                        loadAllSongs();
+                    })
+                    .catch(err => alert('Erro: ' + err.message));
+            }
+        }
+
+        function deleteAllSongs() {
+            if (confirm('⚠️ ATENÇÃO: Isso vai DELETAR TODAS as músicas do banco!\n\nTem certeza?')) {
+                if (confirm('Última chance! Confirma a exclusão de TUDO?')) {
+                    fetch('/api/songs/delete_all', { method: 'DELETE' })
+                        .then(res => res.json())
+                        .then(data => {
+                            alert(data.message || 'Tudo deletado!');
+                            loadAllSongs();
+                        })
+                        .catch(err => alert('Erro: ' + err.message));
+                }
             }
         }
 

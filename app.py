@@ -824,6 +824,69 @@ def get_stats():
         print(f"Erro ao buscar estatísticas: {e}")
         return jsonify([]) # Retorna lista vazia para não quebrar a tela
 
+@app.route('/api/all_songs')
+def api_all_songs():
+    """Retorna todas as músicas do banco (musicas_controle)"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM musicas_controle ORDER BY id DESC')
+        songs = [dict(row) for row in cur.fetchall()]
+        cur.close()
+        conn.close()
+        return jsonify(songs)
+    except Exception as e:
+        print(f"Erro ao buscar músicas: {e}")
+        return jsonify([])
+
+@app.route('/api/songs/<int:song_id>', methods=['DELETE'])
+def api_delete_song(song_id):
+    """Deleta uma música específica do banco"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Pega o track_id antes de deletar
+        cur.execute('SELECT track_id FROM musicas_controle WHERE id = %s', (song_id,))
+        row = cur.fetchone()
+        
+        if row:
+            track_id = row['track_id']
+            # Deleta da tabela de controle
+            cur.execute('DELETE FROM musicas_controle WHERE id = %s', (song_id,))
+            # Deleta histórico diário
+            cur.execute('DELETE FROM plays_diarios WHERE track_id = %s', (track_id,))
+            # Deleta da playlist (fila)
+            cur.execute('DELETE FROM playlist WHERE track_id = %s', (track_id,))
+            
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"Erro ao deletar música: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/songs/delete_all', methods=['DELETE'])
+def api_delete_all_songs():
+    """Deleta TODAS as músicas do banco"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Deleta tudo
+        cur.execute('DELETE FROM musicas_controle')
+        cur.execute('DELETE FROM plays_diarios')
+        cur.execute('DELETE FROM playlist')
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"success": True, "message": "Todas as músicas foram deletadas!"})
+    except Exception as e:
+        print(f"Erro ao deletar tudo: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/plays_history/<track_id>')
 def api_plays_history(track_id):
     """Retorna histórico de plays diários para um track específico"""
